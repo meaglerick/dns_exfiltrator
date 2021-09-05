@@ -5,10 +5,8 @@ import random
 import string
 import sys, argparse
 import time
-asdf
-#adapted from: https://thepacketgeek.com/scapy/building-network-tools/part-09/
-apexdomain = ''
-
+apexdomain = 'docybertoit.com'
+file_uuids = []
 
 def get_random_string(length):
     letters = string.ascii_lowercase
@@ -24,6 +22,15 @@ def dns_responder(pkt: IP):
     
     
     queryname = pkt["DNS Question Record"].qname #byte class
+    query = queryname.decode('utf-8')
+    if apexdomain.com in query:
+        """
+        #this query is destined for this listener, need to extra the UUID to
+        determine if the file is already in transit or a new file, then start receiving the data
+        
+        """
+        
+    return
     if (DNS in pkt and pkt[DNS].opcode == 0 and pkt[DNS].ancount == 0):
         if apexdomain in str(queryname) and (pkt["DNS Question Record"].qtype == 1): #A Record (AAAA Record == 28)
             
@@ -62,18 +69,6 @@ def start_sniffer(bpf_filter, listen_int):
     #sniff(filter=bpf_filter, prn=dns_responder, listen_int=listen_int)
     
 
-def send_random_dns_query(dnsserver, apexdomain):
-    while True:
-        searchquery = get_random_string(random.randint(24,48)) + '.' + apexdomain
-        l5 = DNS(rd=1, qd=DNSQR(qname=searchquery,qtype="A"))
-        l4 = UDP(dport=53)
-        l3 = IP(dst=dnsserver)
-        packet = l3/l4/l5
-        randomtime = random.randint(1,5)
-        print("Sending randomized DNS to ", dnsserver, " Sleeping for: ", randomtime, " seconds\n", packet.summary())
-        send(packet)
-        time.sleep(randomtime)
-
 def main(args):
 
     print(args)
@@ -92,9 +87,7 @@ def main(args):
         print(listen_int)
         start_sniffer(bpf_filter, listen_int)
 
-    else:
-        
-        send_random_dns_query(args['dns'], args['apexdomain'])
+
 
 if __name__ == "__main__":
 
