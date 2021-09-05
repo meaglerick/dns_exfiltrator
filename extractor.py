@@ -63,7 +63,7 @@ def send_query(query: str):
     #https://dnspython.readthedocs.io/en/stable/query.html#dns.query.udp
     q = dns.message.make_query(query, 'A')
     try:
-        r = dns.query.udp(q=q, where='10.0.10.162', timeout=.00001)
+        r = dns.query.udp(q=q, where='10.0.10.163', timeout=.00001)
         print(r)
     except dns.exception.Timeout as e:
         return  # this is expected, we don't care about the return query
@@ -73,4 +73,4 @@ def send_query(query: str):
 
 if __name__ == "__main__":
     main()
-    # send_query()
+    #send_query("asdsdfgsdfg.docybertoit.com")
