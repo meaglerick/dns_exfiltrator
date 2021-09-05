@@ -28,6 +28,15 @@ def dns_responder(pkt: IP):
         #this query is destined for this listener, need to extra the UUID to
         determine if the file is already in transit or a new file, then start receiving the data
         
+        dns query format:
+        C2 codes
+        A = setup query
+        D = data query
+        Z = file upload finished
+        1. send setup_query, coded with A and number of file chunks
+        2. send file_chunk_query, coded with D, each file chunk identified by its index
+        3. send finish_query query with Z, denoting complete
+
         """
         
     return
