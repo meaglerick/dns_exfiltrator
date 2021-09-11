@@ -74,6 +74,42 @@ def send_plaintext_query(query: str):
     except Exception as e:
         print(e)
 
+def send_doh_query(query: str):
+    import requests
+    where = '1.1.1.1'
+    qname = 'example.com.'
+    
+    # one method is to use context manager, session will automatically close
+    with requests.sessions.Session() as session:
+        # q = dns.message.make_query(qname, dns.rdatatype.A)
+        q = dns.message.make_query("example.com", "A")
+        r = dns.query.https(q, where, session=session)
+        for answer in r.answer:
+            print(answer)
+    
+
+    where = 'https://dns.google/dns-query'
+    qname = 'example.net.'
+    # second method, close session manually
+    session = requests.sessions.Session()
+    q = dns.message.make_query(qname, dns.rdatatype.A)
+    r = dns.query.https(q, where, session=session)
+    for answer in r.answer:
+        print(answer) 
+
+    """sends query using dns over https
+    https://dnspython.readthedocs.io/en/latest/query.html#https
+    examples: https://github.com/rthalley/dnspython/blob/master/examples/doh.py
+    """
+    session = requests.sessions.Session()
+    q = dns.message.make_query("asdfasdfasdfasdfasdfasdfad123.234234.asdf.example.com", "A")
+    r = dns.query.https(q, where='https://doh.docybertoit.com/dns', session=session, post=False)
+    session.close
+    return
+    q = dns.message.make_query(query, 'A')
+    server = "https://doh.docybertoit.com/dns"
+    r = dns.query.https(q=q, where=server, post=True, timeout=3)
+
 if __name__ == "__main__":
-    main()
-    #send_query("asdsdfgsdfg.docybertoit.com")
+    #main()
+    send_doh_query("asdsdfgsdfg.docybertoit.com")
