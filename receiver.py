@@ -96,6 +96,7 @@ def save_base32_file(file_name, file_data):
         #p#rint(byte_data)
         f.write(b32_decode_str)
         print("Wrote file to {file_name}")
+        
     f.close()
 
                     
