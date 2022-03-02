@@ -4,7 +4,7 @@ from scapy.all import DNS, DNSQR, DNSRR, IP, send, sniff, sr1, UDP
 import random
 import string
 import sys, argparse
-import time
+import time, os
 import base64
 apexdomain = 'docybertoit.com.'
 file_uuids = []
@@ -109,6 +109,10 @@ def start_sniffer(bpf_filter, listen_int):
     
 
 def main(args):
+
+    if not os.path.exists('receive'):
+        os.makedirs('receive')
+
 
     print(args)
     if(args['listener']):
