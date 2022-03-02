@@ -2,3 +2,5 @@ env/*
 env
 .vscode
 receive/*
+.env
+.env/*

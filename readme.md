@@ -14,7 +14,7 @@ Probably need this for the server side
 ```pip install scapy```
 
 
-### For the client side (Dns extractor)
+### For the client side (Dns_extractor)
 `pip install dynspython`
 
 DNSPython tool: https://github.com/rthalley/dnspython
