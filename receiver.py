@@ -91,17 +91,17 @@ def save_base32_file(file_name, file_data):
         #then, conver str to byte data
         #then, write to file
         b32_decode_str = base64.b32decode(data)
-        print(b32_decode_str)
+        #print(b32_decode_str)
         #b#yte_data = str.encode(b32_decode_str)
         #p#rint(byte_data)
         f.write(b32_decode_str)
+        print("Wrote file to {file_name}")
     f.close()
 
                     
 
 def start_sniffer(bpf_filter, listen_int):
     print('Sniffing on ', listen_int, ' with a filter of: ', bpf_filter)
-    #sniff(filter=bpf_filter, prn=dns_responder(dns_server_ip), listen_int=listen_int)
 
     #sniff(filter=bpf_filter, prn=dns_responder, listen_int='ens38')
     sniff(filter=bpf_filter, prn=dns_responder, iface = listen_int)
@@ -117,8 +117,7 @@ def main(args):
         
         
         listen_int = args['interface']
-        #local_ip = args['dns']
-        dns_server_ip = args['dns']
+        
 
         
         #bpf_filter =  f"udp port 53 and ip dst {args['dns']}"
@@ -133,8 +132,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument('--listener', dest='listener', help='Define if this is going to listen for DNS queries \
         or send queries to a DNS server', action='store_true')
-    ap.add_argument("-d", "--dns", type=str, help='The upstream DNS Server address \
-        if this is a sending DNS tumbler. Otherwise, omit.')
     ap.add_argument("-i", "--interface", type=str, default='',
         help='If this is a responding dns tumbler, define the interface \
         to listen on. Otherwise omit')
