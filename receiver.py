@@ -71,7 +71,8 @@ def dns_responder(pkt: IP):
             #print("INDEX: " , index)
             #print("INFO: " , info[3])
             file_chunks[uuid][index] = info[3]
-            print('.',end='')
+            print('.',end='',flush=True)
+
             #print(file_chunks[uuid][index])
         
         if c2code == 'Z':
@@ -96,9 +97,10 @@ def save_base32_file(file_name, file_data):
         #b#yte_data = str.encode(b32_decode_str)
         #p#rint(byte_data)
         f.write(b32_decode_str)
-        print("Wrote file to {file_name}")
+        
 
     f.close()
+    print(f"Wrote file to receive/{file_name}")
 
                     
 
@@ -139,10 +141,8 @@ if __name__ == "__main__":
     ap.add_argument('--listener', dest='listener', help='Define if this is going to listen for DNS queries \
         or send queries to a DNS server', action='store_true')
     ap.add_argument("-i", "--interface", type=str, default='',
-        help='If this is a responding dns tumbler, define the interface \
-        to listen on. Otherwise omit')
+        help='If this is a DNS receiver define the interface to listen on.')
 
     args = vars(ap.parse_args())
     
     main(args)
-    hello
