@@ -71,6 +71,7 @@ def dns_responder(pkt: IP):
             #print("INDEX: " , index)
             #print("INFO: " , info[3])
             file_chunks[uuid][index] = info[3]
+            print('.',end='')
             #print(file_chunks[uuid][index])
         
         if c2code == 'Z':
