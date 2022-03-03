@@ -11,14 +11,6 @@ file_uuids = []
 file_chunks = {}
 num_chunks = 0
 
-def get_random_string(length):
-    letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(length))
-
-def get_random_ip_address():
-    #def randquad(): return str(random.randint(1,223))
-    randIP = [str(random.randint(1,223)) for i in range(0,4)]
-    return '.'.join(x for x in randIP)
 
 def dns_responder(pkt: IP):
     
