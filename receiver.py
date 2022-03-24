@@ -11,6 +11,14 @@ file_uuids = []
 file_chunks = {}
 num_chunks = 0
 
+def get_random_ip_address():
+    #def randquad(): return str(random.randint(1,223))
+    randIP = [str(random.randint(1,223)) for i in range(0,4)]
+    return '.'.join(x for x in randIP)
+    
+def get_random_string(length):
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(length))
 
 def dns_responder(pkt: IP):
     
@@ -84,7 +92,20 @@ def dns_responder(pkt: IP):
             #print(file_chunks[uuid])
             save_base32_file(uuid, file_chunks[uuid])
 
+        ### respond to the query
+        aliasanswer = bytes(get_random_string(48) + '.' + apexdomain, 'utf-8')            
+        dnsARecordAnswer = DNSRR(rrname=aliasanswer, type=1, rclass=1, rdlen=None, rdata=get_random_ip_address()) 
+        dnsCNameAnswer = DNSRR(rrname=query, type=5, rclass=1, ttl=60, rdlen=None, rdata=aliasanswer)
+        dnsOriginalQuery = DNSQR(qname=query, qtype=1, qclass=1)
 
+        l5 = DNS(length=None, id=pkt[DNS].id, qr=1, opcode=0, aa=0, tc=0, rd=1, ra=1, z=0, ad=0, cd=0, rcode=0, qdcount=1, ancount=2, nscount=0, arcount=0, qd=dnsOriginalQuery,
+            an=dnsCNameAnswer/dnsARecordAnswer, ns=None, ar=None)
+        l4 = UDP(dport=pkt[UDP].sport, sport=53)
+        l3 = IP(dst=pkt[IP].src, src=pkt[IP].dst)
+        response_packet: IP
+        response_packet = l3/l4/l5
+        send(response_packet)
+        print("Responding with: ", response_packet.summary())
         
     return
 
